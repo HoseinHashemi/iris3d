@@ -321,11 +321,11 @@ export function renderStats(el) {
       rows.push([`${k}${note} bias / MAE / P95`, `${st.bias.toFixed(1)} / ${st.mae.toFixed(1)} / ${st.p95.toFixed(0)} µm`]);
     }
     if (c.thickness) rows.push(['Thickness bias / MAE / P95', `${c.thickness.bias.toFixed(1)} / ${c.thickness.mae.toFixed(1)} / ${c.thickness.p95.toFixed(0)} µm`, true]);
-    rows.push([`CST: OcuForm / ${ref}`, `${f(s.C)} / ${f(da.C)} µm`, true]);
+    rows.push([`CST: Iris3D / ${ref}`, `${f(s.C)} / ${f(da.C)} µm`, true]);
     if (r && Number.isFinite(r.C)) rows.push(['CST reported by device', `${f(r.C)} µm`]);
     if (r && Number.isFinite(r.volume)) rows.push(['Volume reported by device', `${r.volume.toFixed(2)} mm³`]);
   }
   el.innerHTML = `<table class="etdrs-table">${rows.map(([k, v, hl]) => `<tr class="${hl ? 'hl' : ''}"><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
-  ${c ? `<div class="status" style="margin-top:6px">† Different boundary definition (OcuForm: band centre; ${state.refLabel || 'device'}: band edge), so a constant offset is expected.</div>` : ''}
+  ${c ? `<div class="status" style="margin-top:6px">† Different boundary definition (Iris3D: band centre; ${state.refLabel || 'device'}: band edge), so a constant offset is expected.</div>` : ''}
   ${a.coverage < 0.98 ? `<div class="status" style="margin-top:6px">* ETDRS 6 mm circle only ${(a.coverage * 100).toFixed(0)}% covered by the scan.</div>` : ''}`;
 }

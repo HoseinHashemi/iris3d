@@ -1,4 +1,4 @@
-# OcuForm 3D
+# Iris3D
 
 Browser app that reconstructs a 3D eye from a macular OCT volume + colour fundus photograph.
 
@@ -39,7 +39,7 @@ Synthetic phantom with analytic ground truth (512×400×97, 5 µm/px): ILM −2.
 
 Real Heidelberg Spectralis scans vs the **device's own segmentation** (ILM–BM retinal thickness, 3.87 µm axial pixel):
 
-| Scan | Thickness bias | MAE | P95 | CST OcuForm / device |
+| Scan | Thickness bias | MAE | P95 | CST Iris3D / device |
 |---|---|---|---|---|
 | layers.vol (97 B-scans, normal) | −0.4 µm | 3.0 µm | 7.6 µm | 271 / 270 µm |
 | healthy_OD.vol (512 B-scans, 3.2 mm) | +1.2 µm | 2.8 µm | 6.5 µm | 257 / 255 µm |
@@ -49,11 +49,11 @@ Real Heidelberg Spectralis scans vs the **device's own segmentation** (ILM–BM 
 All ETDRS sectors of the drusen case are within 4 µm of the values the Spectralis reported in its own export.
 
 **Diabetic macular edema vs manual expert grading** (Duke DME set, 10 Spectralis volumes, 11 traced B-scans each,
-~5 800 A-scans per eye). OcuForm is compared with grader 1; grader 2 vs grader 1 is the human baseline:
+~5 800 A-scans per eye). Iris3D is compared with grader 1; grader 2 vs grader 1 is the human baseline:
 
 | | Thickness MAE | Bias | P95 |
 |---|---|---|---|
-| OcuForm vs grader 1 (mean of 10 eyes, range) | 5.5 µm (4.8–6.3) | −3.3 … +1.9 µm | 12–16 µm |
+| Iris3D vs grader 1 (mean of 10 eyes, range) | 5.5 µm (4.8–6.3) | −3.3 … +1.9 µm | 12–16 µm |
 | Grader 2 vs grader 1 | 6.8 µm (5.5–8.4) | | 15–19 µm |
 
 On these eyes the automatic ILM–BM thickness is as close to an expert as the two experts are to each other.

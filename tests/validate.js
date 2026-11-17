@@ -2,7 +2,7 @@
 //   const v = await import('/tests/validate.js'); await v.runAll();
 // Needs the sample files in /test-data (see README). Results are logged and returned.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const S = () => window.ocuform.state;
+const S = () => window.iris3d.state;
 const r1 = (v) => (Number.isFinite(v) ? +v.toFixed(1) : null);
 
 const reset = () => { const s = S(); s.analysis = null; s.comparison = null; };
@@ -29,7 +29,7 @@ function deviceReport(name, seconds) {
     dims: `${s.volume.w}×${s.volume.h}×${s.volume.d}, ${s.volume.widthMM}×${s.volume.lengthMM} mm`,
     boundaries_um: Object.fromEntries(Object.entries(c.layers).map(([k, v]) => [k, v && { bias: r1(v.bias), mae: r1(v.mae), p95: r1(v.p95) }])),
     thickness_um: { bias: r1(c.thickness.bias), mae: r1(c.thickness.mae), p95: r1(c.thickness.p95) },
-    etdrs_ocuform: sec(s.analysis.sectors), etdrs_deviceLayers: sec(c.devAnalysis.sectors), etdrs_deviceReported: sec(c.reported),
+    etdrs_iris3d: sec(s.analysis.sectors), etdrs_deviceLayers: sec(c.devAnalysis.sectors), etdrs_deviceReported: sec(c.reported),
   };
   console.log(out);
   return out;

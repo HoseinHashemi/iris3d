@@ -313,7 +313,7 @@ $('btnDeviceSeg').onclick = () => {
   if (!state.deviceSeg || !state.volume) return;
   state.seg = { surfaces: fillDeviceSeg(state.deviceSeg, state.volume), device: true };
   afterAnalysis();
-  setStatus('segStatus', `Showing the ${state.refLabel === 'device' ? 'device (Heidelberg)' : state.refLabel} segmentation. Run segmentation to switch back to OcuForm.`, 'ok');
+  setStatus('segStatus', `Showing the ${state.refLabel === 'device' ? 'device (Heidelberg)' : state.refLabel} segmentation. Run segmentation to switch back to Iris3D.`, 'ok');
   refreshAll();
 };
 $('inTint').onchange = () => refreshFundusDependent();
@@ -457,7 +457,7 @@ bindSlider('retClip', (v) => `${Math.round(v * 100)}%`, (v) => { retina.opts.cli
 
 // ------------------------------------------------------------------ export
 const download = (url, name) => { const a = document.createElement('a'); a.href = url; a.download = name; a.click(); };
-$('btnPng').onclick = () => download(viewer.screenshot(), `ocuform-${viewer.mode}.png`);
+$('btnPng').onclick = () => download(viewer.screenshot(), `iris3d-${viewer.mode}.png`);
 $('btnCsv').onclick = () => {
   const a = state.analysis, v = state.volume;
   if (!a) return;
@@ -476,7 +476,7 @@ $('btnGlb').onclick = () => {
 // initial paint
 dataSummary();
 refreshAll();
-window.ocuform = { state, viewer };
+window.iris3d = { state, viewer };
 
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || !state.volume) return;

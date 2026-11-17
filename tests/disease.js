@@ -89,7 +89,7 @@ function stats(a) {
 
 export async function duke(n) {
   const name = `Subject_${String(n).padStart(2, '0')}.mat`;
-  const S = () => window.ocuform.state;
+  const S = () => window.iris3d.state;
   S().analysis = null; S().comparison = null;
   for (const [id, v] of [['inW', DUKE_DIMS.widthMM], ['inL', DUKE_DIMS.lengthMM], ['inD', DUKE_DIMS.depthMM]]) document.getElementById(id).value = v;
   const blob = await (await fetch(`/test-data/duke_dme/2015_BOE_Chiu/${name}`)).blob();
@@ -114,7 +114,7 @@ export async function duke(n) {
   const c = S().comparison;
   const out = {
     case: name, seconds: Math.round((performance.now() - t0) / 1000),
-    ocuform_vs_grader1: { ILM: c.layers.ILM && { bias: r1(c.layers.ILM.bias), mae: r1(c.layers.ILM.mae) }, BM: c.layers.BM && { bias: r1(c.layers.BM.bias), mae: r1(c.layers.BM.mae) }, thickness: { bias: r1(c.thickness.bias), mae: r1(c.thickness.mae), p95: r1(c.thickness.p95), n: c.thickness.n } },
+    iris3d_vs_grader1: { ILM: c.layers.ILM && { bias: r1(c.layers.ILM.bias), mae: r1(c.layers.ILM.mae) }, BM: c.layers.BM && { bias: r1(c.layers.BM.bias), mae: r1(c.layers.BM.mae) }, thickness: { bias: r1(c.thickness.bias), mae: r1(c.thickness.mae), p95: r1(c.thickness.p95), n: c.thickness.n } },
     grader2_vs_grader1: { ILM: stats(gI), BM: stats(gB), thickness: stats(gT) },
   };
   console.log(out);
@@ -124,7 +124,7 @@ export async function duke(n) {
 export async function dukeAll(list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
   const res = [];
   for (const n of list) res.push(await duke(n));
-  console.table(res.map((r) => ({ case: r.case, ocuMAE: r.ocuform_vs_grader1.thickness.mae, ocuBias: r.ocuform_vs_grader1.thickness.bias, ocuP95: r.ocuform_vs_grader1.thickness.p95, graderMAE: r.grader2_vs_grader1.thickness.mae, graderP95: r.grader2_vs_grader1.thickness.p95 })));
+  console.table(res.map((r) => ({ case: r.case, ocuMAE: r.iris3d_vs_grader1.thickness.mae, ocuBias: r.iris3d_vs_grader1.thickness.bias, ocuP95: r.iris3d_vs_grader1.thickness.p95, graderMAE: r.grader2_vs_grader1.thickness.mae, graderP95: r.grader2_vs_grader1.thickness.p95 })));
   return res;
 }
 
