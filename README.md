@@ -1,5 +1,7 @@
 # Iris3D
 
+[![deploy](https://github.com/HoseinHashemi/iris3d/actions/workflows/deploy.yml/badge.svg)](https://github.com/HoseinHashemi/iris3d/actions/workflows/deploy.yml)
+
 Browser app that reconstructs a 3D eye from a macular OCT volume + colour fundus photograph.
 
 **[▶ Live demo](https://hoseinhashemi.github.io/iris3d/)**: click *Load synthetic demo case*. Everything runs in your browser; no data is uploaded.
