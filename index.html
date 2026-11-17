@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OcuForm 3D</title>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <header class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>OcuForm 3D</h1>
+        <p>3D eye reconstruction from OCT and fundus images</p>
+      </div>
+    </header>
+
+    <details open>
+      <summary>1 · Data</summary>
+      <div class="section">
+        <button id="btnDemo" class="primary wide">Load synthetic demo case</button>
+        <label class="file">Fundus photo <span class="hint">(jpg / png / tif)</span>
+          <input type="file" id="fileFundus" accept="image/*,.tif,.tiff,.ppm,.pgm" />
+        </label>
+        <label class="file">OCT <span class="hint">(Heidelberg .vol · Heyex XML export: select the .xml + all .tif · B-scan images · multi-page TIFF)</span>
+          <input type="file" id="fileOct" accept="image/*,.tif,.tiff,.ppm,.pgm,.vol,.xml,.mat" multiple />
+        </label>
+        <div class="row">
+          <label>Device preset
+            <select id="preset"></select>
+          </label>
+        </div>
+        <div class="grid3">
+          <label>Scan width (mm)<input type="number" id="inW" step="0.1" value="6" /></label>
+          <label>Scan length (mm)<input type="number" id="inL" step="0.1" value="6" /></label>
+          <label>Depth range (mm)<input type="number" id="inD" step="0.01" value="1.92" /></label>
+        </div>
+        <div class="grid3">
+          <label>Fundus FOV (°)<input type="number" id="inFov" step="1" value="45" /></label>
+          <label>Axial length (mm)<input type="number" id="inAL" step="0.1" value="23.6" /></label>
+          <label>Eye
+            <select id="inLat"><option value="OD">OD (right)</option><option value="OS">OS (left)</option></select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" id="inFlip" /> First B-scan is inferior (flip slice order)</label>
+        <label class="check"><input type="checkbox" id="inTint" checked /> Pseudo-colour monochrome / IR fundus in 3D</label>
+        <div id="dataStatus" class="status">No data loaded.</div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>2 · Landmarks &amp; registration</summary>
+      <div class="section">
+        <canvas id="regCanvas"></canvas>
+        <div class="btnrow">
+          <button id="btnAuto">Auto-detect</button>
+          <button id="btnSetFovea" class="toggle">Click fovea</button>
+          <button id="btnSetDisc" class="toggle">Click disc</button>
+        </div>
+        <div class="slider"><span>Offset X</span><input type="range" id="regDx" min="-2" max="2" step="0.01" value="0" /><output></output></div>
+        <div class="slider"><span>Offset Y</span><input type="range" id="regDy" min="-2" max="2" step="0.01" value="0" /><output></output></div>
+        <div class="slider"><span>Rotation</span><input type="range" id="regRot" min="-20" max="20" step="0.1" value="0" /><output></output></div>
+        <div class="slider"><span>Scale</span><input type="range" id="regScale" min="0.7" max="1.3" step="0.005" value="1" /><output></output></div>
+        <div class="slider"><span>Overlay</span><input type="range" id="regAlpha" min="0" max="1" step="0.01" value="0.55" /><output></output></div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>3 · Layer segmentation</summary>
+      <div class="section">
+        <div class="slider"><span>3D smoothing</span><input type="range" id="segSmooth" min="0" max="4" step="0.1" value="1.2" /><output></output></div>
+        <div class="btnrow">
+          <button id="btnSeg" class="primary">Run segmentation</button>
+          <button id="btnDeviceSeg" title="Use the layer segmentation stored in the device export">Use device layers</button>
+        </div>
+        <div class="progress"><div id="segProgress"></div></div>
+        <div id="segStatus" class="status">Graph-search (dynamic programming) segmentation of ILM, RNFL/GCL, EZ, RPE and Bruch's membrane, then 3D smoothing across B-scans.</div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>4 · 3D view</summary>
+      <div class="section">
+        <div class="seg-ctrl" id="viewMode">
+          <button data-mode="eye" class="active">Anatomical eye</button>
+          <button data-mode="retina">Retina detail</button>
+          <button data-mode="pathway">Visual pathway</button>
+        </div>
+        <div id="eyeCtrls">
+          <div class="slider"><span>Cutaway</span><input type="range" id="eyeCut" min="0" max="1" step="0.01" value="0.5" /><output></output></div>
+          <div class="slider"><span>Pupil (mm)</span><input type="range" id="eyePupil" min="1.5" max="8" step="0.1" value="3.5" /><output></output></div>
+          <div class="slider"><span>Patch relief ×</span><input type="range" id="eyeExag" min="1" max="15" step="0.5" value="4" /><output></output></div>
+          <label class="check"><input type="checkbox" id="eyePatch" checked /> Show OCT macular surface on retina</label>
+          <div class="row2">
+            <label>Patch colour
+              <select id="eyePatchMode"><option value="thickness">Thickness map</option><option value="fundus">Fundus photo</option></select>
+            </label>
+            <label>Iris
+              <select id="eyeIris">
+                <option value="brown">Brown</option><option value="hazel">Hazel</option><option value="green">Green</option><option value="blue">Blue</option><option value="grey">Grey</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="pathCtrls" hidden>
+          <div class="slider"><span>Brain</span><input type="range" id="pathBrain" min="0" max="1" step="0.01" value="0.16" /><output></output></div>
+          <div class="slider"><span>Nerve sheath</span><input type="range" id="pathNerve" min="0.1" max="1" step="0.01" value="0.4" /><output></output></div>
+          <label>Brain cut-away
+            <select id="pathCut"><option value="none">None</option><option value="left">Remove left hemisphere</option><option value="right">Remove right hemisphere</option><option value="top">Remove upper brain (axial)</option></select>
+          </label>
+          <div class="layer-toggles">
+            <label class="check"><input type="checkbox" data-part="fibres" checked /> Fibre tracts</label>
+            <label class="check"><input type="checkbox" data-part="muscles" checked /> Eye muscles</label>
+            <label class="check"><input type="checkbox" data-part="arteries" checked /> Arteries</label>
+            <label class="check"><input type="checkbox" data-part="ventricles" checked /> Ventricles</label>
+            <label class="check"><input type="checkbox" data-part="eyes" checked /> Globes</label>
+            <label class="check"><input type="checkbox" data-part="labels" checked /> Labels</label>
+          </div>
+          <div class="field-key">
+            <div><span class="swatch" style="background:#ffb547"></span><span class="swatch" style="background:#ff4f38"></span> Left visual field (upper / lower) → right hemisphere</div>
+            <div><span class="swatch" style="background:#5fe0ff"></span><span class="swatch" style="background:#3d6bff"></span> Right visual field (upper / lower) → left hemisphere</div>
+          </div>
+        </div>
+        <div id="retinaCtrls" hidden>
+          <div class="slider"><span>Depth ×</span><input type="range" id="retExag" min="1" max="8" step="0.1" value="3" /><output></output></div>
+          <div class="layer-toggles" id="layerToggles"></div>
+          <div class="row2">
+            <label>ILM surface
+              <select id="retIlmMode"><option value="fundus">Fundus photo</option><option value="thickness">Thickness map</option><option value="solid">Solid</option></select>
+            </label>
+            <label>Volume
+              <select id="retVolMode"><option value="off">Off</option><option value="composite">Volume render</option><option value="mip">Max-intensity</option></select>
+            </label>
+          </div>
+          <label class="check"><input type="checkbox" id="retBscan" checked /> Show current B-scan plane</label>
+          <div class="slider"><span>Vol. opacity</span><input type="range" id="retVolOp" min="0.05" max="3" step="0.05" value="1" /><output></output></div>
+          <div class="slider"><span>Vol. threshold</span><input type="range" id="retVolLo" min="0" max="0.9" step="0.01" value="0.3" /><output></output></div>
+          <div class="slider"><span>Clip slices</span><input type="range" id="retClip" min="0" max="1" step="0.01" value="0" /><output></output></div>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>5 · Export</summary>
+      <div class="section btnrow">
+        <button id="btnPng">Screenshot PNG</button>
+        <button id="btnGlb">Surfaces GLB</button>
+        <button id="btnCsv">Thickness CSV</button>
+      </div>
+    </details>
+
+    <footer class="disclaimer">Research / education tool. Not a medical device. Check segmentation on the B-scans before relying on any measurement.</footer>
+  </aside>
+
+  <main>
+    <section id="viewport">
+      <div id="hud">
+        <div id="hudTitle">Anatomical eye</div>
+        <div id="hudSub"></div>
+      </div>
+      <div id="legend" hidden>
+        <div class="legend-title">Retinal thickness (ILM–BM, µm)</div>
+        <div class="legend-bar"></div>
+        <div class="legend-ticks"><span>150</span><span>250</span><span>350</span><span>450</span></div>
+      </div>
+      <div id="busy" hidden><div class="spinner"></div><span id="busyText">Working…</span></div>
+    </section>
+    <section id="bottom">
+      <div class="panel" id="bscanPanel">
+        <div class="panel-head">
+          <span>B-scan <b id="sliceLabel">–</b></span>
+          <input type="range" id="sliceSlider" min="0" max="0" value="0" />
+          <label class="check small"><input type="checkbox" id="bscanOverlay" checked /> layers</label>
+          <select id="editLayer" title="Draw on the B-scan to correct a boundary">
+            <option value="">Edit: off</option><option value="ILM">Edit ILM</option><option value="RNFL">Edit RNFL/GCL</option>
+            <option value="EZ">Edit EZ</option><option value="RPE">Edit RPE</option><option value="BM">Edit BM</option>
+          </select>
+        </div>
+        <div class="canvas-wrap"><canvas id="bscanCanvas" title="Scroll to move between B-scans"></canvas></div>
+      </div>
+      <div class="panel" id="mapPanel">
+        <div class="panel-head">
+          <span>Map</span>
+          <select id="mapMode"><option value="thickness">Thickness</option><option value="enface">En-face OCT</option></select>
+        </div>
+        <div class="canvas-wrap"><canvas id="mapCanvas" title="Scroll to move between B-scans · click to jump"></canvas></div>
+      </div>
+      <div class="panel" id="statsPanel">
+        <div class="panel-head"><span>ETDRS grid · <b id="statsLat">OD</b></span></div>
+        <div id="stats"><div class="status">Run segmentation to compute statistics.</div></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
