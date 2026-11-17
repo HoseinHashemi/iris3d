@@ -2,6 +2,8 @@
 
 Browser app that reconstructs a 3D eye from a macular OCT volume + colour fundus photograph.
 
+**[▶ Live demo](https://hoseinhashemi.github.io/iris3d/)**: click *Load synthetic demo case*. Everything runs in your browser; no data is uploaded.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173  → click "Load synthetic demo case"
