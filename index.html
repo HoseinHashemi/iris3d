@@ -117,6 +117,17 @@
             <label class="check"><input type="checkbox" data-part="eyes" checked /> Globes</label>
             <label class="check"><input type="checkbox" data-part="labels" checked /> Labels</label>
           </div>
+          <label>Lesion simulation
+            <select id="pathLesion">
+              <option value="">None</option>
+              <optgroup label="Before the chiasm (one eye)"><option value="onL">Left optic nerve</option><option value="junction">Left nerve–chiasm junction</option></optgroup>
+              <optgroup label="Chiasm"><option value="adenoma">Pituitary macroadenoma</option><option value="chiasmLat">Right lateral chiasm</option></optgroup>
+              <optgroup label="Behind the chiasm (homonymous)"><option value="tractR">Right optic tract</option><option value="lgnL">Left LGN</option><option value="meyerL">Left temporal lobe (Meyer's loop)</option><option value="parietalL">Left parietal lobe</option><option value="pcaL">Left occipital infarct (PCA)</option><option value="poleL">Left occipital pole</option></optgroup>
+              <option value="custom" hidden>Custom (clicked)</option>
+            </select>
+          </label>
+          <div class="slider"><span>Lesion size</span><input type="range" id="pathLesionSize" min="0.4" max="1.8" step="0.05" value="1" /><output></output></div>
+          <label class="check"><input type="checkbox" id="pathLesionClick" /> Click the nerves or fibres to place a lesion</label>
           <div class="field-key">
             <div><span class="swatch" style="background:#ffb547"></span><span class="swatch" style="background:#ff4f38"></span> Left visual field (upper / lower) → right hemisphere</div>
             <div><span class="swatch" style="background:#5fe0ff"></span><span class="swatch" style="background:#3d6bff"></span> Right visual field (upper / lower) → left hemisphere</div>
@@ -163,6 +174,12 @@
         <div class="legend-title">Retinal thickness (ILM–BM, µm)</div>
         <div class="legend-bar"></div>
         <div class="legend-ticks"><span>150</span><span>250</span><span>350</span><span>450</span></div>
+      </div>
+      <div id="fieldPanel" hidden>
+        <div class="fp-head"><span>Resulting visual fields</span><button id="fieldClose" title="Remove lesion">×</button></div>
+        <canvas id="fieldCanvas"></canvas>
+        <div id="fieldName"></div>
+        <div id="fieldNote"></div>
       </div>
       <div id="busy" hidden><div class="spinner"></div><span id="busyText">Working…</span></div>
     </section>

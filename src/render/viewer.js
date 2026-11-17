@@ -64,7 +64,7 @@ export class Viewer {
     this.pathCtl.minDistance = 15;
     this.pathCtl.maxDistance = 700;
     this.labelRenderer = new CSS2DRenderer();
-    Object.assign(this.labelRenderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+    Object.assign(this.labelRenderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1' });
     this.labelRenderer.domElement.classList.add('label-layer');
     container.appendChild(this.labelRenderer.domElement);
 

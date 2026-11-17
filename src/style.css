@@ -60,6 +60,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .seg-ctrl button { border: none; background: transparent; }
 .seg-ctrl button.active { background: #24364a; color: #fff; }
 #eyeCtrls, #retinaCtrls, #pathCtrls { display: flex; flex-direction: column; gap: 9px; }
+#eyeCtrls[hidden], #retinaCtrls[hidden], #pathCtrls[hidden] { display: none; }
 .layer-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
 .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .disclaimer { padding: 14px 16px; color: #5d6c7e; font-size: 11px; line-height: 1.5; }
@@ -75,7 +76,7 @@ main { display: grid; grid-template-rows: 1fr 290px; min-width: 0; min-height: 0
 .legend-title { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .legend-bar { height: 10px; border-radius: 3px; }
 .legend-ticks { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 3px; }
-#busy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(5,8,12,.55); font-weight: 500; }
+#busy { z-index: 6; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(5,8,12,.55); font-weight: 500; }
 #busy[hidden] { display: none; }
 .spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #2a3a4c; border-top-color: var(--accent); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -98,3 +99,13 @@ main { display: grid; grid-template-rows: 1fr 290px; min-width: 0; min-height: 0
 .field-key .swatch { margin-right: 1px; vertical-align: -1px; }
 .p-label { color: #e8eef5; font-size: 11px; white-space: nowrap; text-shadow: 0 1px 3px #000, 0 0 6px #000; display: flex; align-items: center; gap: 5px; transform: translateX(-4px); }
 .p-label .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.6); flex: none; }
+
+#fieldPanel { z-index: 5; position: absolute; right: 16px; bottom: 16px; width: 384px; background: rgba(12,16,22,.86); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 12px; backdrop-filter: blur(8px); }
+#fieldPanel[hidden] { display: none; }
+.fp-head { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+.fp-head button { background: none; border: 0; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.fp-head button:hover { color: var(--text, #fff); }
+#fieldCanvas { display: block; margin: 0 auto; }
+#fieldName { font-weight: 600; font-size: 13px; margin-top: 6px; }
+#fieldNote { color: var(--muted); font-size: 11.5px; line-height: 1.45; margin-top: 4px; }
+#viewport.picking canvas { cursor: crosshair; }

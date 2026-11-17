@@ -13,6 +13,7 @@ import { computeAnalysis } from './processing/analysis.js';
 import { Viewer } from './render/viewer.js';
 import { BscanPanel, MapPanel, RegPanel, renderStats } from './ui/panels.js';
 import { thicknessGradientCSS } from './util.js';
+import { LESIONS, drawFields, describeFields } from './ui/fieldChart.js';
 
 const $ = (id) => document.getElementById(id);
 const viewer = new Viewer($('viewport'));
@@ -411,6 +412,8 @@ document.querySelectorAll('#viewMode button').forEach((b) => (b.onclick = async 
   $('eyeCtrls').hidden = mode !== 'eye';
   $('retinaCtrls').hidden = mode !== 'retina';
   $('pathCtrls').hidden = mode !== 'pathway';
+  $('fieldPanel').hidden = mode !== 'pathway' || !viewer.pathway?.lesion;
+  $('viewport').classList.toggle('picking', mode === 'pathway' && $('pathLesionClick').checked);
   $('legend').hidden = !state.analysis || mode === 'pathway' || (mode === 'eye' && $('eyePatchMode').value !== 'thickness');
   updateHud();
 }));
@@ -420,6 +423,44 @@ function applyPathwayControls(p) {
   p.setBrainCut($('pathCut').value);
   p.setIris($('eyeIris').value);
   document.querySelectorAll('#pathCtrls [data-part]').forEach((c) => p.setVisible(c.dataset.part, c.checked));
+  applyLesion();
+}
+
+// ------------------------------------------------------------------ lesion simulation
+let customLesion = null; // { c, note } placed by clicking
+function applyLesion() {
+  const p = viewer.pathway;
+  if (!p) return;
+  const id = $('pathLesion').value, k = +$('pathLesionSize').value;
+  const preset = id === 'custom' ? customLesion && { c: customLesion.c, r: [3, 3, 3], note: 'Custom lesion. Compare the defect with the fibres it interrupts (grey).' } : LESIONS[id];
+  const les = preset ? { c: preset.c, r: preset.r.map((v) => v * k), tumour: preset.tumour } : null;
+  const maps = p.setLesion(les);
+  $('fieldPanel').hidden = !maps;
+  if (!maps) return;
+  drawFields($('fieldCanvas'), maps);
+  $('fieldName').textContent = describeFields(maps);
+  $('fieldNote').textContent = preset.note;
+}
+$('pathLesion').onchange = applyLesion;
+bindSlider('pathLesionSize', (v) => `×${v.toFixed(2)}`, () => applyLesion());
+$('fieldClose').onclick = () => { $('pathLesion').value = ''; applyLesion(); };
+$('pathLesionClick').onchange = (e) => $('viewport').classList.toggle('picking', e.target.checked && viewer.mode === 'pathway');
+{
+  const el = viewer.renderer.domElement;
+  let down = null;
+  el.addEventListener('pointerdown', (e) => (down = [e.clientX, e.clientY]));
+  el.addEventListener('pointerup', (e) => {
+    if (!down || viewer.mode !== 'pathway' || !viewer.pathway || !$('pathLesionClick').checked) return;
+    if (Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return; // a drag rotates the view
+    const r = el.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), viewer.pathCam);
+    const pt = viewer.pathway.pick(ray);
+    if (!pt) return;
+    customLesion = { c: pt.toArray() };
+    $('pathLesion').value = 'custom';
+    applyLesion();
+  });
 }
 bindSlider('pathBrain', (v) => (v < 0.01 ? 'off' : v > 0.98 ? 'solid' : `${Math.round(v * 100)}%`), (v) => viewer.pathway?.setBrainOpacity(v));
 bindSlider('pathNerve', (v) => (v > 0.98 ? 'solid' : `${Math.round(v * 100)}%`), (v) => viewer.pathway?.setNerveOpacity(v));

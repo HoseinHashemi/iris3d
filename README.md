@@ -28,6 +28,14 @@ npm run build      # static build in dist/
    procedurally folded brain with ventricles and the circle of Willis. Fibres are coloured by visual hemifield, so
    the nasal-fibre crossing at the chiasm and the retinotopy (upper field → Meyer's loop → lower calcarine bank) are
    visible. Brain opacity / cut-away, layer toggles and labels in the 3D panel.
+   **Lesion simulation** (teaching): pick a preset (optic nerve, nerve–chiasm junction, pituitary macroadenoma,
+   lateral chiasm, optic tract, LGN, Meyer's loop, parietal radiation, PCA infarct, occipital pole) or click any
+   nerve or fibre bundle to place a lesion, and resize it with "Lesion size". Interrupted fibres turn grey and
+   the panel shows both eyes' visual fields (grey-scale, as the patient sees them) with the defect named, e.g.
+   bitemporal hemianopia or homonymous quadrantanopia. The fields are computed from which modelled fibres the
+   lesion cuts, so any position works, not only the presets. Each field point needs both its retinal axon and its
+   geniculo-calcarine fibre. Simplifications: defects are perfectly congruous, Wilbrand's knee is not modelled,
+   and there is no partial (relative) loss from compression.
 6. **Browse / correct** – scroll the mouse wheel over the B-scan or thickness map (or use the arrow keys) to move
    between B-scans. Pick a layer in the B-scan panel (“Edit …”) and draw over it; statistics and 3D update.
    “Use device layers” switches to the device segmentation.

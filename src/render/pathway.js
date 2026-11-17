@@ -252,6 +252,7 @@ export class VisualPathway {
     this.buildVentricles();
     this.buildBrain();
     this.buildLabels();
+    this.buildLesion();
     this.buildTime = performance.now() - t0;
   }
 
@@ -420,7 +421,8 @@ export class VisualPathway {
           pts.push(p.addScaledVector(S, ry * 1.3 + jt * 0.6).addScaledVector(U, ju));
         }
         pts.push(mir(LGN, h).add(V((R() - 0.5) * 4, (R() - 0.5) * 2.5, (R() - 0.5) * 6)));
-        retinal.push({ pts: new THREE.CatmullRomCurve3(pts, false, 'centripetal').getPoints(150), color });
+        // visual-field position carried by this axon (normalised to the field radius; +fx = patient's left)
+        retinal.push({ pts: new THREE.CatmullRomCurve3(pts, false, 'centripetal').getPoints(150), color, eye: se > 0 ? 'OS' : 'OD', fx: field * Math.abs(rx), fy: -ry });
       }
     }
     // geniculo-calcarine fibres: LGN → (Meyer's loop | central | dorsal bundle) → calcarine banks
@@ -449,11 +451,113 @@ export class VisualPathway {
         const last = pts[pts.length - 1];
         pts.push(last.clone().lerp(end, 0.55).add(V(3, 0, -3)), end);
         const color = FIELD_COL[field > 0 ? 'L' : 'R'][e > 0 ? 'up' : 'lo'];
-        radiations.push({ pts: new THREE.CatmullRomCurve3(pts.map((p) => V(p.x * h, p.y, p.z)), false, 'centripetal').getPoints(120), color });
+        const ang = (e * Math.PI) / 2; // angle from the horizontal meridian; e > 0 = upper field
+        radiations.push({ pts: new THREE.CatmullRomCurve3(pts.map((p) => V(p.x * h, p.y, p.z)), false, 'centripetal').getPoints(120), color, h, fx: field * ecc * Math.cos(ang), fy: ecc * Math.sin(ang) });
       }
     }
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.0, emissive: '#111111' });
-    G.add(new THREE.Mesh(streamlines(retinal, 0.11), mat), new THREE.Mesh(streamlines(radiations, 0.2), mat));
+    const mR = new THREE.Mesh(streamlines(retinal, 0.11), mat), mO = new THREE.Mesh(streamlines(radiations, 0.2), mat);
+    G.add(mR, mO);
+    this.fibreSets = [{ list: retinal, mesh: mR }, { list: radiations, mesh: mO }];
+    for (const fs of this.fibreSets) fs.base = fs.mesh.geometry.attributes.color.array.slice();
+  }
+
+  // ------------------------------------------------------------ lesion simulation
+  buildLesion() {
+    const G = this.group('lesion');
+    const g = new THREE.IcosahedronGeometry(1, 5), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + 0.07 * noise3(x * 2.3 + 5, y * 2.3, z * 2.3);
+      p.setXYZ(i, x * k, y * k, z * k);
+    }
+    g.computeVertexNormals();
+    this.lesionMat = new THREE.MeshPhysicalMaterial({ color: '#ff2448', emissive: '#5a0012', roughness: 0.35, clearcoat: 0.6, transparent: true, opacity: 0.55, depthWrite: false });
+    this.lesionMesh = new THREE.Mesh(g, this.lesionMat);
+    this.lesionMesh.renderOrder = 10; // after the translucent brain, ventricles and sheath
+    // halo drawn through other structures so a deep lesion stays visible
+    this.lesionHalo = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#ff3b5c', transparent: true, opacity: 0.22, depthTest: false, depthWrite: false }));
+    this.lesionHalo.renderOrder = 11;
+    this.lesionMesh.add(this.lesionHalo);
+    G.add(this.lesionMesh);
+    G.visible = false;
+  }
+  /**
+   * les = null | { c: [x,y,z], r: [rx,ry,rz] (mm, ellipsoid), tumour?: bool }.
+   * Every fibre with a sample inside the ellipsoid is interrupted (drawn grey).
+   * Returns the resulting visual fields (see fieldMaps) or null.
+   */
+  setLesion(les) {
+    this.lesion = les;
+    this.parts.lesion.visible = !!les;
+    if (les) {
+      this.lesionMesh.position.set(...les.c);
+      this.lesionMesh.scale.set(...les.r);
+      this.lesionMat.color.set(les.tumour ? '#e7a08c' : '#ff2448');
+      this.lesionMat.emissive.set(les.tumour ? '#3a1408' : '#5a0012');
+      this.lesionMat.opacity = les.tumour ? 0.8 : 0.6;
+      this.lesionHalo.material.color.set(les.tumour ? '#f0b09a' : '#ff3b5c');
+    }
+    for (const fs of this.fibreSets) {
+      const attr = fs.mesh.geometry.attributes.color, a = attr.array;
+      let v = 0;
+      for (const f of fs.list) {
+        const n = f.pts.length * 5; // streamlines(): 5 vertices per ring
+        f.cut = !!les && f.pts.some((p) => {
+          const dx = (p.x - les.c[0]) / les.r[0], dy = (p.y - les.c[1]) / les.r[1], dz = (p.z - les.c[2]) / les.r[2];
+          return dx * dx + dy * dy + dz * dz < 1;
+        });
+        if (f.cut) for (let i = v * 3; i < (v + n) * 3; i += 3) { a[i] = 0.2; a[i + 1] = 0.21; a[i + 2] = 0.24; }
+        else a.set(fs.base.subarray(v * 3, (v + n) * 3), v * 3);
+        v += n;
+      }
+      attr.needsUpdate = true;
+    }
+    return les ? this.fieldMaps() : null;
+  }
+  /** Ray-pick a point on the fibre tracts / nerves / chiasm (for placing a lesion by clicking). */
+  pick(raycaster) {
+    const targets = [this.nerveMesh, ...this.fibreSets.map((f) => f.mesh)].filter((m) => m.visible && m.parent.visible);
+    const hit = raycaster.intersectObjects(targets, false)[0];
+    return hit ? hit.point : null;
+  }
+  /**
+   * Visual fields of both eyes as N×N grids in chart orientation (as the patient sees them: column 0 =
+   * patient's left, row 0 = superior), value 1 = seen, 0 = blind, NaN outside the field. A field point
+   * is seen when both the retinal axon (of that eye) and the geniculo-calcarine fibre carrying it are
+   * intact; it takes the inverse-distance vote of the 4 nearest fibres in the same quadrant, so defects
+   * respect the vertical and horizontal meridians as real ones do.
+   */
+  fieldMaps(N = 72) {
+    const q = (fx, fy) => (fx > 0 ? 0 : 1) + (fy > 0 ? 0 : 2);
+    const ret = { OS: [[], [], [], []], OD: [[], [], [], []] }, rad = [[], [], [], []];
+    for (const f of this.fibreSets[0].list) ret[f.eye][q(f.fx, f.fy)].push(f);
+    for (const f of this.fibreSets[1].list) rad[q(f.fx, f.fy)].push(f);
+    const loss = (list, x, y) => {
+      const bd = [1e9, 1e9, 1e9, 1e9], bc = [0, 0, 0, 0];
+      for (const f of list) {
+        const d = Math.hypot(f.fx - x, f.fy - y);
+        if (d >= bd[3]) continue;
+        let k = 3;
+        while (k > 0 && bd[k - 1] > d) { bd[k] = bd[k - 1]; bc[k] = bc[k - 1]; k--; }
+        bd[k] = d; bc[k] = f.cut ? 1 : 0;
+      }
+      let sw = 0, sc = 0;
+      for (let k = 0; k < 4; k++) if (bd[k] < 1e9) { const w = 1 / (bd[k] + 0.02); sw += w; sc += w * bc[k]; }
+      return sw ? sc / sw : 0;
+    };
+    const out = { N };
+    for (const eye of ['OS', 'OD']) {
+      const m = new Float32Array(N * N);
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+        const fx = 1 - ((i + 0.5) * 2) / N, fy = 1 - ((j + 0.5) * 2) / N;
+        if (fx * fx + fy * fy > 1) { m[j * N + i] = NaN; continue; }
+        const k = q(fx, fy);
+        const seen = (1 - loss(ret[eye][k], fx, fy)) * (1 - loss(rad[k], fx, fy));
+        m[j * N + i] = smoothstep(0.3, 0.7, seen);
+      }
+      out[eye] = m;
+    }
+    return out;
   }
 
   // ------------------------------------------------------------ circle of Willis + ophthalmic arteries
